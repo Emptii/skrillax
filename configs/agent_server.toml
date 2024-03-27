@@ -1,5 +1,5 @@
-external-address = "127.0.0.1:15780"
-rpc-address = "agent"
+external-address = "192.168.178.84:15780"
+rpc-address = "localhost"
 
 [game]
-data-location = "/usr/silkroad"
+data-location = "/home/max/sro/Silkroad"
