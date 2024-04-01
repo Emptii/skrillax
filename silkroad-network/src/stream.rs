@@ -13,6 +13,7 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio_util::codec::{FramedRead, FramedWrite};
+use tracing::field::debug;
 use tracing::{debug, warn};
 
 pub type StreamResult<T> = Result<T, StreamError>;
@@ -64,10 +65,10 @@ impl StreamReader {
                     Err(_) => return,
                 },
                 Err(StreamError::ProtocolError(proto_err)) => {
-                    warn!(id = ?reader.id, "Could not handle packet: {}", proto_err);
+                    warn!(id = ?reader.id, "Could not handle packet: {:?}", proto_err);
                 },
                 Err(e) => {
-                    warn!(id = ?reader.id, "Could not parse frame :( {}", e);
+                    warn!(id = ?reader.id, "Could not parse frame :( frameError: {:?}", e);
                     return;
                 },
             }
