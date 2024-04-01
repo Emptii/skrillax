@@ -1,4 +1,4 @@
-external-address = "192.168.178.84:15780"
+external-address = "127.0.0.1:15780"
 rpc-address = "localhost"
 
 [game]
