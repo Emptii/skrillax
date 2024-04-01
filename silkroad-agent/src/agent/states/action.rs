@@ -8,11 +8,15 @@ use crate::ext::ActionIdCounter;
 use bevy_ecs::prelude::*;
 use bevy_ecs::query::QueryEntityError;
 use bevy_time::{Time, Timer, TimerMode};
+use log::debug;
 use silkroad_data::skilldata::{RefSkillData, SkillParam};
 use silkroad_data::DataEntry;
 use silkroad_game_base::{GlobalLocation, ItemTypeData};
 use silkroad_protocol::combat::{DoActionResponseCode, PerformActionError, PerformActionResponse};
-use silkroad_protocol::inventory::{InventoryItemContentData, InventoryOperationError, InventoryOperationResult};
+use silkroad_protocol::inventory::{
+    InventoryItemBindingData, InventoryItemContentData, InventoryOperationError, InventoryOperationResult,
+};
+use silkroad_protocol::ServerPacket;
 use std::time::Duration;
 use tracing::error;
 
@@ -123,6 +127,24 @@ pub(crate) fn pickup(
                 ItemTypeData::Gold { amount } => {
                     gold.gain(u64::from(*amount));
                     client.send(PerformActionResponse::Do(DoActionResponseCode::Success));
+                },
+                ItemTypeData::Equipment { upgrade_level } => {
+                    if let Some(slot) = inventory.add_item(drop.item) {
+                        client.send(InventoryOperationResult::success_gain_item(
+                            slot,
+                            drop.item.reference.ref_id(),
+                            InventoryItemContentData::Equipment {
+                                plus_level: *upgrade_level,
+                                variance: drop.item.variance.unwrap_or_default(),
+                                durability: 1,
+                                magic: vec![],
+                                bindings_1: InventoryItemBindingData::new(1, 0),
+                                bindings_2: InventoryItemBindingData::new(2, 0),
+                                bindings_3: InventoryItemBindingData::new(3, 0),
+                                bindings_4: InventoryItemBindingData::new(4, 0),
+                            },
+                        ));
+                    }
                 },
                 _ => {
                     if let Some(slot) = inventory.add_item(drop.item) {
