@@ -5,6 +5,7 @@ use crate::game::mind::Mind;
 use crate::input::PlayerInput;
 use crate::world::{EntityLookup, WorldData};
 use bevy_ecs::prelude::*;
+use log::debug;
 use silkroad_protocol::combat::{ActionTarget, DoActionType, PerformAction, PerformActionError, PerformActionResponse};
 use tracing::warn;
 
@@ -39,6 +40,7 @@ pub(crate) fn handle_action(
                 },
                 DoActionType::PickupItem { target } => match target {
                     ActionTarget::Entity(unique_id) => {
+                        debug!("pickup target: {}", target);
                         let Some(target) = lookup.get_entity_for_id(*unique_id) else {
                             client.send(PerformActionResponse::Stop(PerformActionError::InvalidTarget));
                             continue;
@@ -48,7 +50,6 @@ pub(crate) fn handle_action(
                             client.send(PerformActionResponse::Stop(PerformActionError::InvalidTarget));
                             continue;
                         };
-
                         mind.pickup(EntityReference(target, *game_entity));
                     },
                     _ => continue,

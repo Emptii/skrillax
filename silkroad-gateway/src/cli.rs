@@ -13,6 +13,10 @@ pub(crate) enum Commands {
         password: String,
         passcode: Option<String>,
     },
+    SetGm {
+        character_name: String,
+        gm: Option<bool>,
+    },
     // Some other command ideas:
     // - Add news entry
     // - list news

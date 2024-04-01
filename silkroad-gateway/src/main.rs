@@ -10,7 +10,7 @@ mod server;
 use crate::agentserver::AgentServerManager;
 use crate::cli::{Cli, Commands};
 use crate::config::{get_config, DbOptions, GatewayServerConfig};
-use crate::login::{LoginProvider, RegistrationResult};
+use crate::login::{LoginProvider, RegistrationResult, SetGmResult};
 use crate::news::NewsCacheAsync;
 use crate::patch::Patcher;
 use crate::server::GatewayServer;
@@ -138,7 +138,22 @@ async fn run_command(command: &Commands, configuration: &GatewayServerConfig) ->
                 },
             }
         },
+        Commands::SetGm { character_name, gm } => {
+            let db = create_db(&configuration.database).await?;
+            let login_handler = LoginProvider::new(db);
+            let gm = gm.unwrap_or(true);
+            match login_handler.set_gm(character_name, gm).await {
+                SetGmResult::Success => {
+                    info!("Set gamemaster for character {} to {}.", character_name, gm);
+                },
+                SetGmResult::UserNotFound => {
+                    return Err(anyhow!("Could not set gm, because no user with that name was found."));
+                },
+                _ => {
+                    return Err(anyhow!("Could not create account."));
+                },
+            }
+        },
     }
-
     Ok(())
 }

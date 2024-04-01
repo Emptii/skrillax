@@ -1,4 +1,5 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
+use log::debug;
 use sqlx::PgPool;
 
 #[derive(sqlx::FromRow, Clone)]
@@ -22,6 +23,12 @@ pub(crate) enum RegistrationResult {
     Success,
     UsernameTaken,
     DatabaseError,
+}
+
+pub(crate) enum SetGmResult {
+    Success,
+    DatabaseError,
+    UserNotFound,
 }
 
 pub(crate) struct LoginProvider {
@@ -117,5 +124,25 @@ impl LoginProvider {
         } else {
             RegistrationResult::DatabaseError
         };
+    }
+
+    pub async fn set_gm(&self, character_name: &str, gm: bool) -> SetGmResult {
+        let exists = sqlx::query!("SELECT id FROM characters WHERE charname = $1", character_name)
+            .fetch_optional(&self.pool)
+            .await
+            .expect("should be able to query existing usernames");
+
+        if exists.is_none() {
+            return SetGmResult::UserNotFound;
+        }
+
+        let result = sqlx::query!("UPDATE characters SET gm = $1 WHERE charname = $2", gm, character_name)
+            .execute(&self.pool)
+            .await;
+
+        match result {
+            Ok(_) => SetGmResult::Success,
+            Err(_) => SetGmResult::DatabaseError,
+        }
     }
 }
