@@ -8,14 +8,17 @@ use crate::game::drop::SpawnDrop;
 use crate::game::gold::get_gold_ref_id;
 use crate::input::PlayerInput;
 use bevy_ecs::prelude::*;
+use log::debug;
 use silkroad_definitions::type_id::{
     ObjectClothingPart, ObjectClothingType, ObjectConsumable, ObjectConsumableAmmo, ObjectEquippable, ObjectItem,
     ObjectJewelryType, ObjectRace, ObjectType, ObjectWeaponType,
 };
 use silkroad_game_base::{Inventory, Item, ItemTypeData, MoveError, Race};
+use silkroad_protocol::character::CharacterEquipItem;
 use silkroad_protocol::inventory::{
     InventoryOperationError, InventoryOperationRequest, InventoryOperationResponseData, InventoryOperationResult,
 };
+use silkroad_protocol::ServerPacket;
 use std::cmp::max;
 use std::ops::Deref;
 
@@ -32,6 +35,7 @@ pub(crate) fn handle_inventory_input(
     mut item_spawn: EventWriter<SpawnDrop>,
 ) {
     for (client, input, level, race, mut inventory, mut gold, position) in query.iter_mut() {
+        debug!("Handling inventory input for player.");
         if let Some(ref action) = input.inventory {
             match action.data {
                 InventoryOperationRequest::DropGold { amount } => {
@@ -79,8 +83,23 @@ pub(crate) fn handle_inventory_input(
                             //  check if required masteries matches
                             if !fits {
                                 // TODO: Use more appropriate error code
+                                debug!("Item does not fit the slot.");
                                 client.send(InventoryOperationResult::Error(InventoryOperationError::Indisposable));
                                 continue;
+                            }
+
+                            match inventory.move_item(source, target, 1) {
+                                Err(MoveError::Impossible) => {},
+                                Err(MoveError::ItemDoesNotExist) => {},
+                                Err(MoveError::NotStackable) => {},
+                                Ok(amount_moved) => {
+                                    client.send(InventoryOperationResult::Success(
+                                        InventoryOperationResponseData::move_item(source, target, amount_moved),
+                                    ));
+
+                                    // TODO: Send equipment update to client
+                                    //client.send(CharacterEquipItem::new(, target, source_item.reference.ref_id()));
+                                },
                             }
                         }
                         match inventory.move_item(source, target, max(1, amount)) {

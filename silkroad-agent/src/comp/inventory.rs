@@ -3,6 +3,7 @@ use crate::persistence::ApplyToDatabase;
 use crate::world::WorldData;
 use axum::async_trait;
 use bevy_ecs::prelude::*;
+use log::debug;
 use silkroad_data::itemdata::RefItemData;
 use silkroad_definitions::type_id::{ObjectItem, ObjectType};
 use silkroad_game_base::{ChangeTracked, Inventory, InventoryChange, Item, ItemTypeData};
@@ -39,6 +40,7 @@ impl ChangeTracked for PlayerInventory {
 #[async_trait]
 impl ApplyToDatabase for InventoryChange {
     async fn apply(&self, character_id: u32, pool: &PgPool) -> Result<(), sqlx::Error> {
+        debug!("Applying inventory change.");
         match self {
             InventoryChange::AddItem { slot, item } => {
                 sqlx::query!(
@@ -66,6 +68,7 @@ impl ApplyToDatabase for InventoryChange {
                 source_slot,
                 target_slot,
             } => {
+                debug!("Moving item from {} to {}", source_slot, target_slot);
                 sqlx::query!(
                     "UPDATE character_items SET slot = $1 WHERE character_id = $2 AND slot = $3",
                     *target_slot as i16,
@@ -88,6 +91,7 @@ impl ApplyToDatabase for InventoryChange {
                 first_slot,
                 second_slot,
             } => {
+                debug!("Swapping item from {} to {}", first_slot, second_slot);
                 sqlx::query!(
                     "UPDATE character_items SET slot = case slot when $2 then $3 when $3 then $2 end WHERE character_id = $1 AND slot in ($2, $3)",
                     character_id as i32,

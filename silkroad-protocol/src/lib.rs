@@ -123,6 +123,11 @@ server_packets! {
     0xB007 => CharacterListResponse,
     0xB001 => CharacterJoinResponse,
     0x303D => CharacterStatsMessage,
+
+    //https://github.com/tanisman/SilkroadProject/blob/8f72246035555abdaba4cf079a356ea028db7385/SCommon/Opcode.cs#L105
+    0x3038 => CharacterEquipItem,
+    0x3039 => CharacterUnequipItem,
+
     0x3601 => UnknownPacket,
     0xB602 => UnknownPacket2,
     0x3020 => CelestialUpdate,
