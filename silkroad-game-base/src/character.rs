@@ -1,5 +1,6 @@
 use crate::{Race, SpawningState, Stats};
 
+#[derive(Debug)]
 pub struct Character {
     pub id: u32,
     pub name: String,

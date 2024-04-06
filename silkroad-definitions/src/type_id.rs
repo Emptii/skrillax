@@ -1,7 +1,7 @@
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::fmt::{Display, Formatter};
 
-#[derive(Eq, PartialEq, Copy, Clone, Hash, Ord, PartialOrd)]
+#[derive(Eq, PartialEq, Copy, Clone, Hash, Ord, PartialOrd, Debug)]
 pub struct TypeId(pub u8, pub u8, pub u8, pub u8);
 
 impl Display for TypeId {

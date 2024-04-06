@@ -2,6 +2,7 @@ use crate::agent::states::Idle;
 use crate::comp::gold::GoldPouch;
 use crate::comp::inventory::PlayerInventory;
 use crate::comp::net::Client;
+use crate::comp::player::Player;
 use crate::comp::{drop, EntityReference, GameEntity};
 use crate::event::{AttackDefinition, DamageReceiveEvent};
 use crate::ext::ActionIdCounter;
@@ -9,9 +10,11 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::query::QueryEntityError;
 use bevy_time::{Time, Timer, TimerMode};
 use log::debug;
+use rand::Rng;
 use silkroad_data::skilldata::{RefSkillData, SkillParam};
 use silkroad_data::DataEntry;
-use silkroad_game_base::{GlobalLocation, ItemTypeData};
+use silkroad_definitions::inventory::EquipmentSlot;
+use silkroad_game_base::{GlobalLocation, Item, ItemTypeData};
 use silkroad_protocol::combat::{DoActionResponseCode, PerformActionError, PerformActionResponse};
 use silkroad_protocol::inventory::{
     InventoryItemBindingData, InventoryItemContentData, InventoryOperationError, InventoryOperationResult,
@@ -166,7 +169,13 @@ pub(crate) fn pickup(
 }
 
 pub(crate) fn action(
-    mut query: Query<(Entity, &GameEntity, &mut Action)>,
+    mut query: Query<(
+        Entity,
+        &GameEntity,
+        &mut Action,
+        Option<&PlayerInventory>,
+        Option<&Player>,
+    )>,
     target_query: Query<&GameEntity>,
     time: Res<Time>,
     attack_instance_counter: Res<ActionIdCounter>,
@@ -174,7 +183,7 @@ pub(crate) fn action(
     mut damage_event: EventWriter<DamageReceiveEvent>,
 ) {
     let delta = time.delta();
-    for (entity, game_entity, mut action) in query.iter_mut() {
+    for (entity, game_entity, mut action, player_inventory, player) in query.iter_mut() {
         if action.progress.tick(delta).just_finished() {
             if let Some(next) = action.state.next() {
                 let time = next.get_time_for(action.skill).unwrap_or(0);
@@ -194,15 +203,67 @@ pub(crate) fn action(
                                 panic!();
                             };
                             let target_ = target_query.get(target).unwrap();
-                            damage_event.send(DamageReceiveEvent {
-                                source: EntityReference(entity, *game_entity),
-                                target: EntityReference(target, *target_),
-                                attack: AttackDefinition {
-                                    skill: action.skill,
-                                    instance: attack_instance_counter.next(),
-                                },
-                                amount: 10,
-                            });
+
+                            if let Some(player_inventory) = player_inventory {
+                                if let Some(player) = player {
+                                    // This is a player attacking something
+                                    debug!("{:?} is attacking!", player);
+                                    let weapon: Option<&Item> =
+                                        player_inventory.get_equipment_item(EquipmentSlot::Weapon);
+
+                                    match weapon {
+                                        Some(weapon) => {
+                                            debug!("Player has weapon: {:?}", weapon);
+                                            let auto_attack_pysical_attack_power_lower =
+                                                player.character.stats.strength() as f32
+                                                    * weapon.reference.physical_reinforce_lower
+                                                    + weapon.reference.physical_attack_power_lower;
+
+                                            let auto_attack_pysical_attack_power_upper =
+                                                player.character.stats.strength() as f32
+                                                    * weapon.reference.physical_reinforce_upper
+                                                    + weapon.reference.physical_attack_power_upper;
+
+                                            let dmg = rand::thread_rng().gen_range(
+                                                auto_attack_pysical_attack_power_lower as u32
+                                                    ..auto_attack_pysical_attack_power_upper as u32 + 1,
+                                            );
+
+                                            damage_event.send(DamageReceiveEvent {
+                                                source: EntityReference(entity, *game_entity),
+                                                target: EntityReference(target, *target_),
+                                                attack: AttackDefinition {
+                                                    skill: action.skill,
+                                                    instance: attack_instance_counter.next(),
+                                                },
+                                                amount: dmg,
+                                            });
+                                        },
+                                        None => {
+                                            debug!("Player has no weapon");
+                                            damage_event.send(DamageReceiveEvent {
+                                                source: EntityReference(entity, *game_entity),
+                                                target: EntityReference(target, *target_),
+                                                attack: AttackDefinition {
+                                                    skill: action.skill,
+                                                    instance: attack_instance_counter.next(),
+                                                },
+                                                amount: 1,
+                                            });
+                                        },
+                                    }
+                                }
+                            } else {
+                                damage_event.send(DamageReceiveEvent {
+                                    source: EntityReference(entity, *game_entity),
+                                    target: EntityReference(target, *target_),
+                                    attack: AttackDefinition {
+                                        skill: action.skill,
+                                        instance: attack_instance_counter.next(),
+                                    },
+                                    amount: 10,
+                                });
+                            }
                         },
                         _ => {},
                     }

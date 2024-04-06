@@ -4,7 +4,7 @@ use silkroad_definitions::TypeId;
 use std::str::FromStr;
 use std::time::Duration;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RefCommon {
     pub ref_id: u32,            // column 1
     pub id: String,             // column 2
@@ -30,7 +30,7 @@ impl RefCommon {
     }
 }
 
-#[derive(TryFromPrimitive, Copy, Clone)]
+#[derive(TryFromPrimitive, Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum RefOrigin {
     Chinese = 0,

@@ -20,7 +20,7 @@ pub enum RefItemRarity {
     Legend = 8,
 }
 
-#[derive(TryFromPrimitive, Copy, Clone)]
+#[derive(TryFromPrimitive, Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum RefBiologicalType {
     Female = 0,
@@ -40,7 +40,7 @@ impl FromStr for RefBiologicalType {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RefItemData {
     pub common: RefCommon,
     pub price: u64,
@@ -49,6 +49,16 @@ pub struct RefItemData {
     pub required_level: Option<NonZeroU8>,
     pub biological_type: RefBiologicalType,
     pub params: [isize; 4],
+    pub physical_attack_power_lower: f32, // column 95
+    pub physical_attack_power_upper: f32, // column 97
+    pub magical_attack_power_lower: f32,  // column 100
+    pub magical_attack_power_upper: f32,  // column 102
+    pub critical: f32,
+    pub physical_reinforce_lower: f32, // column 105
+    pub physical_reinforce_upper: f32, // column 107
+    pub magical_reinforce_upper: f32,  // column 109
+    pub magical_reinforce_lower: f32,  // column 111
+    pub attack_rate: f32,              // column 113
 }
 
 impl PartialEq for RefItemData {
@@ -75,6 +85,7 @@ impl FromStr for RefItemData {
         let common = RefCommon::from_columns(&elements)?;
         let range: u16 = elements.get(94).ok_or(ParseError::MissingColumn(94))?.parse()?;
         let required_level: u8 = elements.get(33).ok_or(ParseError::MissingColumn(33))?.parse()?;
+
         Ok(Self {
             common,
             price: elements.get(26).ok_or(ParseError::MissingColumn(26))?.parse()?,
@@ -88,6 +99,36 @@ impl FromStr for RefItemData {
             required_level: NonZeroU8::new(required_level),
             biological_type: elements.get(58).ok_or(ParseError::MissingColumn(58))?.parse()?,
             max_stack_size: elements.get(57).ok_or(ParseError::MissingColumn(57))?.parse()?,
+            physical_attack_power_lower: elements.get(95).ok_or(ParseError::MissingColumn(95))?.parse()?,
+            physical_attack_power_upper: elements.get(97).ok_or(ParseError::MissingColumn(97))?.parse()?,
+            magical_attack_power_lower: elements.get(100).ok_or(ParseError::MissingColumn(100))?.parse()?,
+            magical_attack_power_upper: elements.get(102).ok_or(ParseError::MissingColumn(102))?.parse()?,
+
+            // for some reason the reinforce columns are always multiplied by 100
+            // so we need to divide them by 100 to get the correct value
+            physical_reinforce_lower: elements
+                .get(105)
+                .ok_or(ParseError::MissingColumn(105))?
+                .parse::<f32>()?
+                / 100.0,
+            physical_reinforce_upper: elements
+                .get(107)
+                .ok_or(ParseError::MissingColumn(107))?
+                .parse::<f32>()?
+                / 100.0,
+            magical_reinforce_lower: elements
+                .get(109)
+                .ok_or(ParseError::MissingColumn(109))?
+                .parse::<f32>()?
+                / 100.0,
+            magical_reinforce_upper: elements
+                .get(111)
+                .ok_or(ParseError::MissingColumn(111))?
+                .parse::<f32>()?
+                / 100.0,
+
+            attack_rate: elements.get(113).ok_or(ParseError::MissingColumn(113))?.parse()?,
+            critical: elements.get(116).ok_or(ParseError::MissingColumn(116))?.parse()?,
         })
     }
 }

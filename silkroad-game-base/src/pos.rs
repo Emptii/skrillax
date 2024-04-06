@@ -8,7 +8,7 @@ use std::ops::{Add, Deref};
 #[derive(Copy, Clone)]
 pub struct LocalLocation(pub Region, pub Vector2<f32>);
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct GlobalLocation(pub Vector2<f32>);
 
 impl Add<Vector2<f32>> for GlobalLocation {

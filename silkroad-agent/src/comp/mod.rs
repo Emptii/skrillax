@@ -20,7 +20,7 @@ use bevy_ecs::prelude::*;
 use bevy_time::{Timer, TimerMode};
 use std::time::Duration;
 
-#[derive(Component, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub(crate) struct GameEntity {
     pub unique_id: u32,
     pub ref_id: u32,

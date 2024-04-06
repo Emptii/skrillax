@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub const WEAPON_SLOT: u8 = 6;
 pub const GOLD_SLOT: u8 = 0xFE;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Item {
     pub reference: &'static RefItemData,
     pub variance: Option<u64>,
@@ -59,7 +59,7 @@ impl Item {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum ItemTypeData {
     Equipment { upgrade_level: u8 },
     COS,
@@ -84,6 +84,7 @@ impl ItemTypeData {
     }
 }
 
+#[derive(Debug)]
 pub enum InventoryChange {
     AddItem {
         slot: u8,
@@ -291,6 +292,7 @@ impl Change for InventoryChange {
     }
 }
 
+#[derive(Debug)]
 pub struct Inventory {
     size: usize,
     // TODO: wouldn't this make more sense as an array of N size?

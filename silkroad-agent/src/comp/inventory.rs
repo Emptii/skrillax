@@ -10,7 +10,7 @@ use silkroad_game_base::{ChangeTracked, Inventory, InventoryChange, Item, ItemTy
 use sqlx::PgPool;
 use std::ops::{Deref, DerefMut};
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub(crate) struct PlayerInventory {
     inventory: Inventory,
 }

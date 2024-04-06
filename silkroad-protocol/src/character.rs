@@ -372,23 +372,6 @@ impl CharacterStatsMessage {
 }
 
 #[derive(Clone, Serialize, ByteSize)]
-pub struct CharacterEquipItem {
-    pub unique_id: u32,
-    pub slot: u8,
-    pub ref_id: u32,
-}
-
-impl CharacterEquipItem {
-    pub fn new(unique_id: u32, slot: u8, ref_id: u32) -> Self {
-        CharacterEquipItem {
-            unique_id,
-            slot,
-            ref_id,
-        }
-    }
-}
-
-#[derive(Clone, Serialize, ByteSize)]
 pub struct UnknownPacket {
     pub unknown_1: u8,
     #[silkroad(size = 4)]

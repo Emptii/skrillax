@@ -453,6 +453,20 @@ impl CharacterPointsUpdate {
     }
 }
 
+// #[derive(Serialize, ByteSize, Copy, Clone)]
+// pub struct CharacterUnequipItem {
+//     pub entity: u32,
+//     pub slot: u8,
+//     pub item_ref: u32,
+//
+
+#[derive(Serialize, ByteSize, Copy, Clone)]
+pub struct CharacterEquipItem {
+    pub entity: u32,
+    pub slot: u8,
+    pub item_ref: u32,
+}
+
 #[derive(Serialize, ByteSize, Copy, Clone)]
 pub struct PlayerPickupAnimation {
     pub entity: u32,

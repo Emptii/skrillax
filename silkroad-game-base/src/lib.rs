@@ -16,7 +16,7 @@ pub use skill::*;
 pub use stats::*;
 pub use vec::*;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Race {
     European,
     Chinese,
@@ -31,7 +31,7 @@ impl Race {
     }
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum SpawningState {
     Loading,
     Spawning,

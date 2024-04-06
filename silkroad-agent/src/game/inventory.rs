@@ -14,11 +14,9 @@ use silkroad_definitions::type_id::{
     ObjectJewelryType, ObjectRace, ObjectType, ObjectWeaponType,
 };
 use silkroad_game_base::{Inventory, Item, ItemTypeData, MoveError, Race};
-use silkroad_protocol::character::CharacterEquipItem;
 use silkroad_protocol::inventory::{
     InventoryOperationError, InventoryOperationRequest, InventoryOperationResponseData, InventoryOperationResult,
 };
-use silkroad_protocol::ServerPacket;
 use std::cmp::max;
 use std::ops::Deref;
 
@@ -35,7 +33,6 @@ pub(crate) fn handle_inventory_input(
     mut item_spawn: EventWriter<SpawnDrop>,
 ) {
     for (client, input, level, race, mut inventory, mut gold, position) in query.iter_mut() {
-        debug!("Handling inventory input for player.");
         if let Some(ref action) = input.inventory {
             match action.data {
                 InventoryOperationRequest::DropGold { amount } => {

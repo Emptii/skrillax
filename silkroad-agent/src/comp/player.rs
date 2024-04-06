@@ -19,7 +19,7 @@ use bevy_ecs::prelude::*;
 use derive_more::{Deref, From};
 use silkroad_game_base::{Character, Race, SpawningState, Stats};
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub(crate) struct Player {
     pub user: ServerUser,
     pub character: Character,

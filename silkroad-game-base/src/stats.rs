@@ -5,7 +5,7 @@ pub enum StatType {
     INT,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct Stats {
     str: u16,
     int: u16,
