@@ -453,18 +453,32 @@ impl CharacterPointsUpdate {
     }
 }
 
-// #[derive(Serialize, ByteSize, Copy, Clone)]
-// pub struct CharacterUnequipItem {
-//     pub entity: u32,
-//     pub slot: u8,
-//     pub item_ref: u32,
-//
-
-#[derive(Serialize, ByteSize, Copy, Clone)]
+#[derive(Clone, Serialize, ByteSize, Debug)]
 pub struct CharacterEquipItem {
     pub entity: u32,
     pub slot: u8,
     pub item_ref: u32,
+}
+
+#[derive(Clone, Serialize, ByteSize, Debug)]
+pub struct CharacterUnequipItem {
+    // thank god this guys repo exists, i've spent many hours trying to figure this package out.
+    // https://github.com/ferdoran/go-sro-agent-server/blob/6f2b9a9459491254c8eff6707161294ce996d3d9/model/player.go#L252
+    pub entity: u32,
+    pub slot: u8,
+    pub item_ref: u32,
+}
+
+impl CharacterUnequipItem {
+    pub fn new(entity: u32, slot: u8, item_ref: u32) -> Self {
+        CharacterUnequipItem { entity, slot, item_ref }
+    }
+}
+
+impl CharacterEquipItem {
+    pub fn new(entity: u32, slot: u8, item_ref: u32) -> Self {
+        CharacterEquipItem { entity, slot, item_ref }
+    }
 }
 
 #[derive(Serialize, ByteSize, Copy, Clone)]

@@ -2,12 +2,13 @@ use crate::comp::exp::Leveled;
 use crate::comp::gold::GoldPouch;
 use crate::comp::inventory::PlayerInventory;
 use crate::comp::net::Client;
-use crate::comp::player::CharacterRace;
+use crate::comp::player::{CharacterRace, Player};
 use crate::comp::pos::Position;
+use crate::comp::GameEntity;
 use crate::game::drop::SpawnDrop;
 use crate::game::gold::get_gold_ref_id;
 use crate::input::PlayerInput;
-use bevy_ecs::prelude::*;
+use bevy_ecs::{prelude::*, world};
 use log::debug;
 use silkroad_definitions::type_id::{
     ObjectClothingPart, ObjectClothingType, ObjectConsumable, ObjectConsumableAmmo, ObjectEquippable, ObjectItem,
@@ -17,11 +18,13 @@ use silkroad_game_base::{Inventory, Item, ItemTypeData, MoveError, Race};
 use silkroad_protocol::inventory::{
     InventoryOperationError, InventoryOperationRequest, InventoryOperationResponseData, InventoryOperationResult,
 };
+use silkroad_protocol::world::{CharacterEquipItem, CharacterUnequipItem};
 use std::cmp::max;
 use std::ops::Deref;
 
 pub(crate) fn handle_inventory_input(
     mut query: Query<(
+        &GameEntity,
         &Client,
         &PlayerInput,
         &Leveled,
@@ -32,7 +35,7 @@ pub(crate) fn handle_inventory_input(
     )>,
     mut item_spawn: EventWriter<SpawnDrop>,
 ) {
-    for (client, input, level, race, mut inventory, mut gold, position) in query.iter_mut() {
+    for (game_entity, client, input, level, race, mut inventory, mut gold, position) in query.iter_mut() {
         if let Some(ref action) = input.inventory {
             match action.data {
                 InventoryOperationRequest::DropGold { amount } => {
@@ -94,8 +97,25 @@ pub(crate) fn handle_inventory_input(
                                         InventoryOperationResponseData::move_item(source, target, amount_moved),
                                     ));
 
-                                    // TODO: Send equipment update to client
-                                    //client.send(CharacterEquipItem::new(, target, source_item.reference.ref_id()));
+                                    // Unequip item
+                                    // let unequip_msg = CharacterUnequipItemResponse::Success(
+                                    //     CharacterUnequipItemResponseData::new(game_entity.ref_id, target),
+                                    // );
+                                    // debug!("Sending equipment update to client: {:?}", unequip_msg,);
+
+                                    // client.send(unequip_msg);
+                                    // // Equip item
+                                    // let mox = inventory.get_item_at(target).unwrap();
+                                    // let msg = CharacterEquipItemResponse::Success(CharacterEquipItemResponseData::new(
+                                    //     game_entity.ref_id,
+                                    //     target,
+                                    //     mox.reference.common.ref_id,
+                                    // ));
+                                    // debug!(
+                                    //     "Sending equipment update to client: {:?}, source was: {:?}",
+                                    //     msg, source
+                                    // );
+                                    // client.send(msg);
                                 },
                             }
                         }
@@ -107,6 +127,22 @@ pub(crate) fn handle_inventory_input(
                                 client.send(InventoryOperationResult::Success(
                                     InventoryOperationResponseData::move_item(source, target, amount_moved),
                                 ));
+                                //if Inventory::is_equipment_slot(target) {
+                                // Unequip item
+                                if let Some(i) = inventory.get_item_at(target) {
+                                    let unequip_msg = CharacterUnequipItem::new(
+                                        game_entity.unique_id,
+                                        source,
+                                        i.reference.common.ref_id,
+                                    );
+                                    //CharacterUnequipItemResponseData::new(player.character.id, source),
+
+                                    debug!("Sending equipment update to client: {:?}", unequip_msg);
+
+                                    client.send(unequip_msg);
+                                }
+                                //}
+                                debug!("source: {:?} target: {:?}", source, target);
                             },
                         }
                     } else {

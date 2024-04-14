@@ -7,7 +7,7 @@ use crate::sync::reset::AppResetExt;
 use crate::sync::system::{
     collect_alives, collect_body_states, collect_deaths, collect_gold_changes, collect_mastery_changes,
     collect_movement_speed_change, collect_movement_update, collect_pickup_animation, collect_stat_changes,
-    synchronize_updates, system_collect_bars_update, system_collect_exp_update, system_collect_level_up,
+    debug_queries, synchronize_updates, system_collect_bars_update, system_collect_exp_update, system_collect_level_up,
     system_collect_sp_update,
 };
 use bevy_app::{App, Plugin, PostUpdate};
@@ -81,6 +81,7 @@ impl Plugin for SynchronizationPlugin {
                     collect_movement_update,
                     collect_movement_speed_change,
                     collect_pickup_animation,
+                    debug_queries,
                     collect_deaths,
                     collect_alives,
                     collect_body_states,

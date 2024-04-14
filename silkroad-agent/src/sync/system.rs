@@ -3,6 +3,7 @@ use crate::agent::MovementState;
 use crate::comp::damage::Invincible;
 use crate::comp::exp::{Experienced, Leveled, SP};
 use crate::comp::gold::GoldPouch;
+use crate::comp::inventory::PlayerInventory;
 use crate::comp::mastery::MasteryKnowledge;
 use crate::comp::net::Client;
 use crate::comp::player::{Player, StatPoints};
@@ -12,7 +13,9 @@ use crate::comp::{GameEntity, Health, Mana};
 use crate::event::LoadingFinishedEvent;
 use crate::sync::{SynchronizationCollector, Update};
 use bevy_ecs::prelude::*;
-use silkroad_game_base::{Heading, LocalPosition, MovementSpeed};
+use log::debug;
+use silkroad_definitions::type_id::ObjectWeaponType;
+use silkroad_game_base::{ChangeTracked, Heading, InventoryChange, LocalPosition, MovementSpeed};
 use silkroad_protocol::character::CharacterStatsMessage;
 use silkroad_protocol::combat::ReceiveExperience;
 use silkroad_protocol::movement::{
@@ -357,6 +360,45 @@ pub(crate) fn collect_pickup_animation(
     }
 }
 
+pub(crate) fn debug_queries(query: Query<(Entity, &GameEntity, &PlayerInventory), (Changed<PlayerInventory>)>) {
+    // for (entity, game_entity, inv) in query.iter() {
+    //     debug!(
+    //         "Entity: {:?}, GameEntity: {:?}, Inventory: {:?}",
+    //         entity, game_entity, inv
+    //     );
+    // }
+}
+
+// pub(crate) fn collect_pickup_equipment_change(
+//     collector: Res<SynchronizationCollector>,
+//     query: Query<(Entity, &GameEntity, &PlayerInventory), Changed<PlayerInventory>>,
+// ) {
+//     for (entity, game_entity, inv) in query.iter() {
+//         for change in inv.changes() {
+//             match change {
+//                 InventoryChange::AddItem { slot, item } => {
+//                     debug!("Adding item to inventory: {:?}", item);
+//                 },
+//                 InventoryChange::MoveItem {
+//                     source_slot,
+//                     target_slot,
+//                 } => {
+//                     debug!("moving item from slot {:?} to slot {:?}", source_slot, target_slot);
+//                 },
+//                 InventoryChange::ChangeTypeData {
+//                     slot,
+//                     old_item,
+//                     new_item,
+//                 } => todo!(),
+//                 InventoryChange::RemoveItem { slot } => todo!(),
+//                 InventoryChange::Swap {
+//                     first_slot,
+//                     second_slot,
+//                 } => todo!(),
+//             }
+//         }
+//     }
+// }
 pub(crate) fn collect_deaths(
     collector: Res<SynchronizationCollector>,
     query: Query<(Entity, &GameEntity), Added<Dead>>,
