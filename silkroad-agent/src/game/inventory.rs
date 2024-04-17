@@ -16,9 +16,11 @@ use silkroad_definitions::type_id::{
 };
 use silkroad_game_base::{Inventory, Item, ItemTypeData, MoveError, Race};
 use silkroad_protocol::inventory::{
-    InventoryOperationError, InventoryOperationRequest, InventoryOperationResponseData, InventoryOperationResult,
+    InventoryItemData, InventoryOperationError, InventoryOperationRequest, InventoryOperationResponseData,
+    InventoryOperationResult,
 };
 use silkroad_protocol::world::{CharacterEquipItem, CharacterUnequipItem};
+use std::any::Any;
 use std::cmp::max;
 use std::ops::Deref;
 
@@ -97,25 +99,25 @@ pub(crate) fn handle_inventory_input(
                                         InventoryOperationResponseData::move_item(source, target, amount_moved),
                                     ));
 
-                                    // Unequip item
-                                    // let unequip_msg = CharacterUnequipItemResponse::Success(
-                                    //     CharacterUnequipItemResponseData::new(game_entity.ref_id, target),
-                                    // );
-                                    // debug!("Sending equipment update to client: {:?}", unequip_msg,);
-
-                                    // client.send(unequip_msg);
-                                    // // Equip item
-                                    // let mox = inventory.get_item_at(target).unwrap();
-                                    // let msg = CharacterEquipItemResponse::Success(CharacterEquipItemResponseData::new(
-                                    //     game_entity.ref_id,
-                                    //     target,
-                                    //     mox.reference.common.ref_id,
-                                    // ));
-                                    // debug!(
-                                    //     "Sending equipment update to client: {:?}, source was: {:?}",
-                                    //     msg, source
-                                    // );
-                                    // client.send(msg);
+                                    if let Some(old_equipment) = inventory.get_item_at(source) {
+                                        let unequip_msg = CharacterUnequipItem::new(
+                                            game_entity.unique_id,
+                                            source,
+                                            old_equipment.reference.common.ref_id,
+                                        );
+                                        client.send(unequip_msg);
+                                    }
+                                    debug!("source: {:?} target: {:?}", source, target);
+                                    if let Some(new_equipment) = inventory.get_item_at(target) {
+                                        let is_onehanded = weapon_is_onehanded(new_equipment).unwrap();
+                                        let equip_msg = CharacterEquipItem::new(
+                                            game_entity.unique_id,
+                                            source,
+                                            new_equipment.reference.common.ref_id,
+                                            is_onehanded,
+                                        );
+                                        client.send(equip_msg);
+                                    }
                                 },
                             }
                         }
@@ -127,7 +129,6 @@ pub(crate) fn handle_inventory_input(
                                 client.send(InventoryOperationResult::Success(
                                     InventoryOperationResponseData::move_item(source, target, amount_moved),
                                 ));
-                                //if Inventory::is_equipment_slot(target) {
                                 // Unequip item
                                 if let Some(i) = inventory.get_item_at(target) {
                                     let unequip_msg = CharacterUnequipItem::new(
@@ -135,13 +136,9 @@ pub(crate) fn handle_inventory_input(
                                         source,
                                         i.reference.common.ref_id,
                                     );
-                                    //CharacterUnequipItemResponseData::new(player.character.id, source),
-
                                     debug!("Sending equipment update to client: {:?}", unequip_msg);
-
                                     client.send(unequip_msg);
                                 }
-                                //}
                                 debug!("source: {:?} target: {:?}", source, target);
                             },
                         }
@@ -153,6 +150,28 @@ pub(crate) fn handle_inventory_input(
             }
         }
     }
+}
+
+fn weapon_is_onehanded(item: &Item) -> Result<bool, &str> {
+    let obj_type = ObjectType::from_type_id(&item.reference.common.type_id).unwrap();
+    if let ObjectType::Item(item_type) = obj_type {
+        match item_type {
+            ObjectItem::Equippable(_) => {
+                return Ok(
+                    matches!(item_type, ObjectItem::Equippable(ObjectEquippable::Weapon(kind)) 
+                        if !matches!(kind, ObjectWeaponType::Glavie | 
+                            ObjectWeaponType::Spear | 
+                            ObjectWeaponType::Axe | 
+                            ObjectWeaponType::Dagger | 
+                            ObjectWeaponType::TwoHandSword | 
+                            ObjectWeaponType::Harp | 
+                            ObjectWeaponType::Staff)),
+                )
+            },
+            _ => return Err("Item is not equippable"),
+        };
+    }
+    Err("Item is not an item")
 }
 
 fn does_object_type_match_race(user_race: Race, obj_type: ObjectType) -> bool {

@@ -458,6 +458,7 @@ pub struct CharacterEquipItem {
     pub entity: u32,
     pub slot: u8,
     pub item_ref: u32,
+    pub is_onehanded: bool,
 }
 
 #[derive(Clone, Serialize, ByteSize, Debug)]
@@ -476,8 +477,13 @@ impl CharacterUnequipItem {
 }
 
 impl CharacterEquipItem {
-    pub fn new(entity: u32, slot: u8, item_ref: u32) -> Self {
-        CharacterEquipItem { entity, slot, item_ref }
+    pub fn new(entity: u32, slot: u8, item_ref: u32, is_onehanded: bool) -> Self {
+        CharacterEquipItem {
+            entity,
+            slot,
+            item_ref,
+            is_onehanded,
+        }
     }
 }
 
