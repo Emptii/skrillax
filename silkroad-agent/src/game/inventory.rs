@@ -109,12 +109,13 @@ pub(crate) fn handle_inventory_input(
                                     }
                                     debug!("source: {:?} target: {:?}", source, target);
                                     if let Some(new_equipment) = inventory.get_item_at(target) {
-                                        let is_onehanded = weapon_is_onehanded(new_equipment).unwrap();
+                                        let opt_level = new_equipment.type_data.upgrade_level().unwrap_or(0);
+
                                         let equip_msg = CharacterEquipItem::new(
                                             game_entity.unique_id,
                                             source,
                                             new_equipment.reference.common.ref_id,
-                                            is_onehanded,
+                                            opt_level,
                                         );
                                         client.send(equip_msg);
                                     }
