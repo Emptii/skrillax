@@ -91,15 +91,63 @@ impl ApplyToDatabase for InventoryChange {
                 first_slot,
                 second_slot,
             } => {
-                debug!("Swapping item from {} to {}", first_slot, second_slot);
+                // since I ran into a unique key constaint error when using a single query,
+                // i will now set the slot to a temporary value while swapping.
+                // relevant stackoverflow question https://stackoverflow.com/a/11207946
+
+                // sqlx::query!(
+                //     "UPDATE character_items
+                //         SET slot = case slot
+                //             when $2 then $3
+                //             when $3 then $2
+                //         end
+                //     WHERE character_id = $1 AND slot in ($2, $3)",
+                //     character_id as i32,
+                //     *first_slot as i16,
+                //     *second_slot as i16,
+                // )
+                // .execute(pool)
+                // .await?;
+
+                // TODO: This doesnt work when multiple changes for the same slot happen within
+                // the timeframe between to perists. I am still getting unique key constraints.
+                // My guess is that these changes are done multiprocessed/at the same time, and
+                // thus too fast for the database. Gotta fix this in the future, but i will keep it
+                // this way for now.
+
                 sqlx::query!(
-                    "UPDATE character_items SET slot = case slot when $2 then $3 when $3 then $2 end WHERE character_id = $1 AND slot in ($2, $3)",
+                    "UPDATE character_items
+                        SET slot = -1
+                     WHERE character_id = $1 AND slot = $2;",
+                    character_id as i32,
+                    *first_slot as i16,
+                )
+                .execute(pool)
+                .await?;
+                debug!("Swapping item from {} to {}", first_slot, -1);
+
+                sqlx::query!(
+                    "UPDATE character_items
+                    SET slot = $2
+                    WHERE character_id = $1 AND slot = $3;",
                     character_id as i32,
                     *first_slot as i16,
                     *second_slot as i16,
                 )
                 .execute(pool)
                 .await?;
+                debug!("Swapping item from {} to {}", second_slot, first_slot);
+
+                sqlx::query!(
+                    "UPDATE character_items
+                    SET slot = $2
+                    WHERE character_id = $1 AND slot = -1;",
+                    character_id as i32,
+                    *second_slot as i16,
+                )
+                .execute(pool)
+                .await?;
+                debug!("Swapping item from {} to {}", first_slot, second_slot);
             },
         }
         Ok(())

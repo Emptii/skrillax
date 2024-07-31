@@ -46,6 +46,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tracing::info;
 
+use tracing::debug;
+
 fn main() {
     tracing_subscriber::fmt::init();
 
@@ -100,12 +102,14 @@ fn main() {
         configuration.rpc_port,
     ));
 
+    info!("{:?}", configuration.game);
     let listen_addr = format!("{}:{}", configuration.listen_address, configuration.listen_port)
         .parse()
         .expect("Just created address should be in a valid format");
     let network = SilkroadServer::new(runtime.clone(), listen_addr).unwrap();
 
     info!("Listening for clients");
+    debug!("GAME CONFIG: {:?}", configuration.game);
     App::new()
         .add_plugins(TimePlugin)
         .add_plugins(TaskPoolPlugin::default())

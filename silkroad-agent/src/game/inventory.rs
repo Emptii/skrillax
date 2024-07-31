@@ -9,7 +9,6 @@ use crate::game::drop::SpawnDrop;
 use crate::game::gold::get_gold_ref_id;
 use crate::input::PlayerInput;
 use bevy_ecs::{prelude::*, world};
-use log::debug;
 use silkroad_definitions::type_id::{
     ObjectClothingPart, ObjectClothingType, ObjectConsumable, ObjectConsumableAmmo, ObjectEquippable, ObjectItem,
     ObjectJewelryType, ObjectRace, ObjectType, ObjectWeaponType,
@@ -20,6 +19,7 @@ use silkroad_protocol::inventory::{
     InventoryOperationResult,
 };
 use silkroad_protocol::world::{CharacterEquipItem, CharacterUnequipItem};
+use tracing::debug;
 use std::any::Any;
 use std::cmp::max;
 use std::ops::{ControlFlow, Deref};
@@ -59,6 +59,7 @@ fn handle_inventory_movement(mut inventory: Mut<'_, PlayerInventory>, source: u8
     if let Some(source_item) = inventory.get_item_at(source) {
         match (Inventory::is_equipment_slot(source), Inventory::is_equipment_slot(target)) {
             (false, true) => {
+                debug!("false, true");
                 // equip item from an item slot
                 let fits = item_fits_into_equipment_slot(source_item, target, level, race);
                 if fits {
@@ -71,61 +72,56 @@ fn handle_inventory_movement(mut inventory: Mut<'_, PlayerInventory>, source: u8
                             client.send(InventoryOperationResult::Success(
                                 InventoryOperationResponseData::move_item(source, target, amount_moved),
                             ));
-
-                            if let Some(old_equipment) = inventory.get_item_at(source) {
-                                let unequip_msg = CharacterUnequipItem::new(
-                                    game_entity.unique_id,
-                                    source,
-                                    old_equipment.reference.common.ref_id,
-                                );
-                                client.send(unequip_msg);
-                            }
-                            debug!("source: {:?} target: {:?}", source, target);
-                            if let Some(new_equipment) = inventory.get_item_at(target) {
-                                let opt_level = new_equipment.type_data.upgrade_level().unwrap_or(0);
-
-                                let equip_msg = CharacterEquipItem::new(
-                                    game_entity.unique_id,
-                                    source,
-                                    new_equipment.reference.common.ref_id,
-                                    opt_level,
-                                );
-                                client.send(equip_msg);
-                            }
+                            player_equip_item(&inventory, source, game_entity, client, target);
                         },
                     }
                 } else {
-                    debug!("Item does not fit the slot.");
+                    debug!("Item does not fit the slot {:?}.", source_item);
                     client.send(InventoryOperationResult::Error(InventoryOperationError::Indisposable));
                 }
             },
             (true, false) => {
                 // unequip item to inventory
-                match inventory.move_item(source, target, max(1, amount)) {
-                    Err(MoveError::Impossible) => {},
-                    Err(MoveError::ItemDoesNotExist) => {},
-                    Err(MoveError::NotStackable) => {},
-                    Ok(amount_moved) => {
-                        client.send(InventoryOperationResult::Success(
-                            InventoryOperationResponseData::move_item(source, target, amount_moved),
-                        ));
-                        // Unequip item
-                        if let Some(i) = inventory.get_item_at(target) {
-                            let unequip_msg = CharacterUnequipItem::new(
-                                game_entity.unique_id,
-                                source,
-                                i.reference.common.ref_id,
-                            );
-                            debug!("Sending equipment update to client: {:?}", unequip_msg);
-                            client.send(unequip_msg);
+                debug!("true, false");
+                debug!("moving item from equipped items to inventory");
+
+                if let Some(swapped_in_item) = inventory.get_item_at(target) {
+                    // If unequipping to a slot that contains another item 
+                    let fits = item_fits_into_equipment_slot(swapped_in_item, source, level, race);
+                    if fits {
+                        match inventory.move_item(source, target, max(1, amount)) {
+                            Err(MoveError::Impossible) => {},
+                            Err(MoveError::ItemDoesNotExist) => {},
+                            Err(MoveError::NotStackable) => {},
+                            Ok(amount_moved) => {
+                                client.send(InventoryOperationResult::Success(
+                                    InventoryOperationResponseData::move_item(source, target, amount_moved),
+                                ));
+                                player_unequip_item(&inventory, target, game_entity, client, source);
+                                player_equip_item(&inventory, source, game_entity, client, source);
+                            }
                         }
-                        debug!("source: {:?} target: {:?}", source, target);
-                    },
+                    } else {
+                        debug!("Item does not fit the slot.");
+                        client.send(InventoryOperationResult::Error(InventoryOperationError::Indisposable));
+                    }
+                } else {
+                    debug!("unequipping item to an empty item slot in inventory");
+                        match inventory.move_item(source, target, max(1, amount)) {
+                            Err(MoveError::Impossible) => {},
+                            Err(MoveError::ItemDoesNotExist) => {},
+                            Err(MoveError::NotStackable) => {},
+                            Ok(amount_moved) => {
+                                client.send(InventoryOperationResult::Success(
+                                    InventoryOperationResponseData::move_item(source, target, amount_moved),
+                                ));
+                                player_unequip_item(&inventory, target, game_entity, client, source);
+                            }
+                        }
                 }
-                // TODO: what if you unequip an equipped item to the slot of another equipment?
-                // I think they get swapped, so i gotta check for equipping event here aswell.
             },
             (false, false) => {
+                debug!("false, false");
                 // simple inventory movement between slots
                 match inventory.move_item(source, target, max(1, amount)) {
                     Err(MoveError::Impossible) => {},
@@ -135,10 +131,14 @@ fn handle_inventory_movement(mut inventory: Mut<'_, PlayerInventory>, source: u8
                         client.send(InventoryOperationResult::Success(
                             InventoryOperationResponseData::move_item(source, target, amount_moved),
                         ));
+                        if let Some(swapped_in_item) = inventory.get_item_at(target) {
+                            debug!("moved {:?} to item slot {:?}", swapped_in_item, source);
+                        }
                     },
                 }
             }
             (true, true) => {
+                debug!("true, true");
                 // e.g. swap equipped ring to other ring slot
                 let fits = item_fits_into_equipment_slot(source_item, target, level, race);
                 if fits {
@@ -152,6 +152,31 @@ fn handle_inventory_movement(mut inventory: Mut<'_, PlayerInventory>, source: u8
         }
     } else {
         client.send(InventoryOperationResult::Error(InventoryOperationError::InvalidTarget));
+    }
+}
+
+fn player_unequip_item(inventory: &Mut<'_, PlayerInventory>, item_slot_to_be_unequipped: u8, game_entity: &GameEntity, client: &Client, source: u8) {
+    if let Some(unequipped_item) = inventory.get_item_at(item_slot_to_be_unequipped) {
+        let unequip_msg = CharacterUnequipItem::new(
+            game_entity.unique_id,
+            source,
+            unequipped_item.reference.common.ref_id,
+        );
+        debug!("unequipping {:?}", unequip_msg);
+        client.send(unequip_msg);
+    }
+}
+fn player_equip_item(inventory: &Mut<'_, PlayerInventory>, slot_the_item_gets_equipped_to: u8, game_entity: &GameEntity, client: &Client, slot_of_item_that_got_equipped: u8) {
+    if let Some(new_equipment) = inventory.get_item_at(slot_of_item_that_got_equipped) {
+        let opt_level = new_equipment.type_data.upgrade_level().unwrap_or(0);
+        let equip_msg = CharacterEquipItem::new(
+            game_entity.unique_id,
+            slot_the_item_gets_equipped_to,
+            new_equipment.reference.common.ref_id,
+            opt_level,
+        );
+        debug!("equipping {:?}", equip_msg);
+        client.send(equip_msg);
     }
 }
 

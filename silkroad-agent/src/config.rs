@@ -7,7 +7,7 @@ use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{ConnectOptions, PgPool};
 use tracing::debug;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct DbOptions {
     pub(crate) host: String,
@@ -37,7 +37,7 @@ impl DbOptions {
     }
 }
 
-#[derive(Deserialize, Default, Clone, Resource)]
+#[derive(Deserialize, Default, Clone, Resource, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct GameConfig {
     pub(crate) max_level: u8,
@@ -53,14 +53,14 @@ pub(crate) struct GameConfig {
     pub(crate) persist_interval: u64,
 }
 
-#[derive(Deserialize, Default, Clone)]
+#[derive(Deserialize, Default, Clone, Debug)]
 pub(crate) struct SpawnOptions {
     pub(crate) radius: f32,
     pub(crate) amount: usize,
     pub(crate) unique: UniqueOptions,
 }
 
-#[derive(Deserialize, Default, Clone)]
+#[derive(Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct UniqueOptions {
     pub(crate) tiger_woman: UniqueSpawnOptions,
@@ -69,20 +69,20 @@ pub(crate) struct UniqueOptions {
     pub(crate) bonelord: UniqueSpawnOptions,
 }
 
-#[derive(Deserialize, Default, Clone)]
+#[derive(Deserialize, Default, Clone, Debug)]
 pub(crate) struct UniqueSpawnOptions {
     pub(crate) min: usize,
     pub(crate) max: usize,
 }
 
-#[derive(Deserialize, Default, Clone)]
+#[derive(Deserialize, Default, Clone, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct MasteryConfig {
     pub(crate) european_per_level: u16,
     pub(crate) chinese_per_level: u16,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct GameServerConfig {
     pub(crate) listen_port: u16,

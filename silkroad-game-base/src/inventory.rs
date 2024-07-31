@@ -344,6 +344,7 @@ impl Inventory {
                 if source_item.reference.ref_id() == target_item.reference.ref_id()
                     && source_item.reference.max_stack_size > 1
                 {
+                    // Stacking items
                     let available_on_target_stack = target_item.reference.max_stack_size - target_item.stack_size();
                     if available_on_target_stack == 0 {
                         self.items.insert(source, source_item);
@@ -393,6 +394,7 @@ impl Inventory {
                     self.items.insert(source, target_item);
                 }
             } else {
+                // Moving item to an empty inventory slot
                 self.changes.push(InventoryChange::MoveItem {
                     source_slot: source,
                     target_slot: target,

@@ -3,3 +3,4 @@ rpc-address = "localhost"
 
 [game]
 data-location = "/home/max/sro/Silkroad"
+persist-interval = 10
