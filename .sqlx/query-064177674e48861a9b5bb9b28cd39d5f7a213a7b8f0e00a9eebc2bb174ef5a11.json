@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE characters SET gm = $1 WHERE charname = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bool",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "064177674e48861a9b5bb9b28cd39d5f7a213a7b8f0e00a9eebc2bb174ef5a11"
+}

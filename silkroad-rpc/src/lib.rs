@@ -7,7 +7,7 @@ pub struct ServerStatusReport {
     pub population: ServerPopulation,
 }
 
-#[derive(Deserialize, Serialize, Copy, Clone, Eq, PartialEq)]
+#[derive(Deserialize, Serialize, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum ServerPopulation {
     Full,
     Crowded,

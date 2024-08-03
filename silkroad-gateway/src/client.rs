@@ -140,6 +140,7 @@ impl Client {
                                     current_attempts: 1,
                                 }))
                                 .await?;
+                            debug!("invalid credentials {:?}, {:?}", &login.username, &login.password);
                         },
                         LoginResult::Blocked => {
                             let response = LoginResponse::error(SecurityError::Blocked {

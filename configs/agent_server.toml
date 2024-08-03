@@ -1,6 +1,8 @@
-external-address = "127.0.0.1:15780"
-rpc-address = "localhost"
+external-address = "0.0.0.0:15780"
+#rpc-address = "localhost"
+rpc-address = "agent"
 
 [game]
-data-location = "/home/max/sro/Silkroad"
+#data-location = "/home/max/sro/Silkroad"
+data-location = "/usr/silkroad"
 persist-interval = 10

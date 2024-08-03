@@ -10,7 +10,7 @@ use std::time::Duration;
 use tokio::sync::RwLock;
 use tracing::{debug, error};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub(crate) enum ServerRegion {
     US,
     EU,
@@ -43,7 +43,7 @@ impl From<ServerRegion> for char {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub(crate) enum ServerStatus {
     Online,
     Offline,
@@ -58,7 +58,7 @@ impl From<ServerStatus> for bool {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct AgentServer {
     pub(crate) id: u16,
     pub(crate) name: String,
@@ -166,6 +166,8 @@ impl AgentServerManager {
         tokio::spawn(async move {
             loop {
                 let mut servers = fetch_servers(db.clone()).await;
+                debug!("{:?}", servers);
+
                 for server in servers.iter_mut() {
                     let status = match Self::request_server_status(server).await {
                         Ok(resp) => resp,
